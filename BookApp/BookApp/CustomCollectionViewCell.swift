@@ -1,0 +1,56 @@
+//
+//  CustomCollectionViewCell.swift
+//  BookApp
+//
+//  Created by Bharat Silavat on 07/02/23.
+//
+
+import UIKit
+
+class CustomCollectionViewCell: UICollectionViewCell {
+    @IBOutlet weak var label: UILabel!
+    @IBOutlet weak var thumbnailImg: UIImageView!
+    var downloadImg = ImageDownloader()
+    
+    func updateUI(with books: String) {
+        label.text = books
+        
+    }
+    func downloadImg(with stringImg: String){
+        
+        ImageDownloader.downloadImage(stringImg) {
+            image, urlString in
+            if let imageObject = image {
+                DispatchQueue.main.async {
+                    self.thumbnailImg.image = imageObject
+                }
+            }
+        }
+    }
+    
+}
+
+class ImageDownloader {
+    static func downloadImage(_ urlString: String, completion: ((_ _image: UIImage?, _ urlString: String?) -> ())?) {
+        guard let url = URL(string: urlString) else {
+            completion?(nil, urlString)
+            return
+        }
+        URLSession.shared.dataTask(with: url) { (data, response,error) in
+            if let error = error {
+                print("error in downloading image: \(error)")
+                completion?(nil, urlString)
+                return
+            }
+            guard let httpResponse = response as? HTTPURLResponse,(200...299).contains(httpResponse.statusCode) else {
+                completion?(nil, urlString)
+                return
+            }
+            if let data = data, let image = UIImage(data: data) {
+                completion?(image, urlString)
+                return
+            }
+            completion?(nil, urlString)
+        }.resume()
+    }
+}
